@@ -6,3 +6,6 @@ google-auth
 google-auth-oauthlib
 google-api-python-client
 google-genai
+mcp 
+mcp[cli]
+mcp[cli]<2.0.0
