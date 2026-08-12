@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 from google_auth_oauthlib.flow import Flow
 from app.core.config import settings
+from app.services.token_storage import save_tokens
 
 router = APIRouter()
 
@@ -51,8 +52,8 @@ def callback(code: str):
     flow.fetch_token(code=code)
     credentials = flow.credentials
 
+    save_tokens(credentials.token, credentials.refresh_token)
+
     return {
-        "message": "Login successful!",
-        "access_token": credentials.token,
-        "refresh_token": credentials.refresh_token,
+        "message": "Login successful! Tokens saved.",
     }
