@@ -10,3 +10,5 @@ mcp
 mcp[cli]
 mcp[cli]<2.0.0
 uv
+sqlalchemy
+psycopg2-binary
