@@ -1,7 +1,7 @@
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
+from app.models.conversation import SessionLocal, Message
 from google import genai
 from google.genai import types
 from app.core.config import settings
@@ -56,6 +56,12 @@ available_functions = {
 
 
 def run_agent(user_message: str) -> str:
+    db = SessionLocal()
+
+    # User ka message save karein
+    db.add(Message(role="user", text=user_message))
+    db.commit()
+
     response = client.models.generate_content(
         model="gemini-flash-latest",
         contents=user_message,
@@ -76,6 +82,13 @@ def run_agent(user_message: str) -> str:
             model="gemini-flash-latest",
             contents=f"User asked: {user_message}\n\nTool result: {function_result}\n\nPlease summarize this nicely for the user.",
         )
-        return follow_up.text
+        final_text = follow_up.text
+    else:
+        final_text = part.text
 
-    return part.text
+    # AI ka response save karein
+    db.add(Message(role="ai", text=final_text))
+    db.commit()
+    db.close()
+
+    return final_text
