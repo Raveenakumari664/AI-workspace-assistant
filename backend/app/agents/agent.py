@@ -58,13 +58,21 @@ available_functions = {
 def run_agent(user_message: str) -> str:
     db = SessionLocal()
 
-    # User ka message save karein
     db.add(Message(role="user", text=user_message))
     db.commit()
 
+    # Pichle 10 messages nikaalte hain (context ke liye)
+    recent_messages = db.query(Message).order_by(Message.id.desc()).limit(10).all()
+    recent_messages.reverse()  # purane se naye order mein
+
+    # Conversation history ko ek text mein convert karte hain
+    conversation_context = "\n".join(
+        [f"{msg.role}: {msg.text}" for msg in recent_messages]
+    )
+
     response = client.models.generate_content(
         model="gemini-flash-latest",
-        contents=user_message,
+        contents=conversation_context,
         config=types.GenerateContentConfig(tools=tools),
     )
 
@@ -80,13 +88,12 @@ def run_agent(user_message: str) -> str:
 
         follow_up = client.models.generate_content(
             model="gemini-flash-latest",
-            contents=f"User asked: {user_message}\n\nTool result: {function_result}\n\nPlease summarize this nicely for the user.",
+            contents=f"Conversation so far:\n{conversation_context}\n\nTool result: {function_result}\n\nPlease summarize this nicely for the user.",
         )
         final_text = follow_up.text
     else:
         final_text = part.text
 
-    # AI ka response save karein
     db.add(Message(role="ai", text=final_text))
     db.commit()
     db.close()
